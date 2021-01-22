@@ -9,6 +9,7 @@ https://help.aliyun.com/document_detail/177682.html
 ==================================================
 """
 import httpx
+import asyncio
 from httpx import Response
 from oss.auth import Auth
 
@@ -242,6 +243,90 @@ class Bucket:
         self.auth.signature(r, bucket=bucket)
         resp = self.client.send(r)
         return resp
+
+    def put_bucket_lifecycle(self):
+        raise NotImplemented
+
+    def get_bucket_lifecycle(self):
+        raise NotImplemented
+
+    def delete_bucket_lifecycle(self):
+        raise NotImplemented
+
+
+class AsyncBucket(Bucket):
+    """object行为的异步方法"""
+
+    def __init__(self, auth: Auth):
+        self.auth = auth
+        self.client = httpx.AsyncClient()
+
+    def __del__(self):
+        try:
+            if not self.client.is_closed:
+                task = asyncio.create_task(self.client.aclose())
+                task.result()
+        except RuntimeError:
+            pass
+        except asyncio.exceptions.InvalidStateError:
+            pass
+
+    async def put_bucket(self, name: str, *, storage_class: str = 'Standard',
+                         redundancy_type: str = 'LRS', alc: str = 'private',
+                         **kwargs) -> Response:
+        corn = super().put_bucket(name, storage_class=storage_class,
+                                  redundancy_type=redundancy_type,
+                                  alc=alc, **kwargs)
+        return await corn
+
+    async def delete_bucket(self, name: str, **kwargs) -> Response:
+        corn = super().delete_bucket(name, **kwargs)
+        return await corn
+
+    async def get_bucket(self, name: str = None, prefix: str = None, max_count: int = 100,
+                         delimiter: str = None, marker: str = None, encoding: str = None,
+                         version: str = None, **kwargs) -> Response:
+        corn = super().get_bucket(name, prefix, max_count, delimiter,
+                                  marker, encoding, version, **kwargs)
+        return await corn
+
+    async def get_bucket_info(self, name: str = None, **kwargs) -> Response:
+        corn = super().get_bucket_info(name, **kwargs)
+        return await corn
+
+    async def get_bucket_location(self, name: str = None, **kwargs) -> Response:
+        corn = super().get_bucket_location(name, **kwargs)
+        return await corn
+
+    async def initiate_bucket_worm(self, retention_period: int, name: str = None,
+                                   **kwargs) -> Response:
+        corn = super().initiate_bucket_worm(retention_period, name, **kwargs)
+        return await corn
+
+    async def abort_bucket_worm(self, name: str = None, **kwargs) -> Response:
+        corn = super().abort_bucket_worm(name, **kwargs)
+        return await corn
+
+    async def complete_bucket_worm(self, worm_id: str, name: str = None,
+                                   **kwargs) -> Response:
+        corn = super().complete_bucket_worm(worm_id, name, **kwargs)
+        return await corn
+
+    def extend_bucket_worm(self):
+        # TODO
+        raise NotImplemented
+
+    async def get_bucket_worm(self, name: str = None, **kwargs) -> Response:
+        corn = super().get_bucket_worm(name, **kwargs)
+        return await corn
+
+    async def put_bucket_acl(self, alc: str, name: str = None, **kwargs) -> Response:
+        corn = super().put_bucket_acl(alc, name, **kwargs)
+        return await corn
+
+    async def get_bucket_acl(self, name: str = None, **kwargs) -> Response:
+        corn = super().get_bucket_acl(name, **kwargs)
+        return await corn
 
     def put_bucket_lifecycle(self):
         raise NotImplemented
