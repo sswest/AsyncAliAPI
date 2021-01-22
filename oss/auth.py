@@ -35,8 +35,11 @@ class Auth:
         self.bucket = bucket
         self.endpoint = endpoint
 
-    def signature(self, request: Request) -> None:
-        """对OSS请求进行签名"""
+    def signature(self, request: Request, *, bucket: str = None) -> None:
+        """对OSS请求进行签名
+        :param request: 对目标请求进行前面
+        :param bucket: 某些情况下可以指定目标bucket(如新建bucket)
+        """
         ct_type = request.headers.get('content-type', '')
         ct_md5 = request.headers.get('content-md5', '')
         oss_headers = {}
@@ -57,11 +60,12 @@ class Auth:
             k, v = query.split('=', 1)
             if k in self.SubResource:
                 _query[k] = v
+        bucket = bucket if bucket else self.bucket
         path += '&'.join([f'{k}={v}' for k, v in _query.items()])
         path = path.strip('?')
         sign = hmac.new(
             bytes(self.accessKeySecret, 'utf8'),
-            bytes(f'{request.method}\n{ct_md5}\n{ct_type}\n{date}\n{oss_headers}/{self.bucket}{path}', 'utf8'),
+            bytes(f'{request.method}\n{ct_md5}\n{ct_type}\n{date}\n{oss_headers}/{bucket}{path}', 'utf8'),
             hashlib.sha1
         )
         sign = base64.b64encode(sign.digest()).decode('utf8')
