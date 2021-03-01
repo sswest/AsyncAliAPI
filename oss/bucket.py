@@ -188,9 +188,25 @@ class Bucket:
         resp = self.client.send(r)
         return resp
 
-    def extend_bucket_worm(self):
-        # TODO
-        raise NotImplemented
+    def extend_bucket_worm(self, worm_id: str, period_days: int,
+                           name: str = None, **kwargs):
+        """用于延长已锁定的合规保留策略对应Bucket中Object的保留天数
+        阿里云文档时间 2020-06-19 12:52
+        :param worm_id: 合规策略ID
+        :param period_days: 指定Object的保留天数
+        :param name: 指定bucket名称
+        :return:
+        """
+        bucket = name if name else self.auth.bucket
+        url = f'https://{bucket}.{self.auth.endpoint}/'
+        url += f'?wormId={worm_id}&wormExtend'
+        data = f'''<ExtendWormConfiguration>
+  <RetentionPeriodInDays>{period_days}</RetentionPeriodInDays>
+</ExtendWormConfiguration>'''
+        r = self.build_request('POST', url, data=data, **kwargs)
+        self.auth.signature(r, bucket=bucket)
+        resp = self.client.send(r)
+        return resp
 
     def get_bucket_worm(self, name: str = None, **kwargs) -> Response:
         """获取指定存储空间（Bucket）的合规保留策略信息
@@ -312,9 +328,10 @@ class AsyncBucket(Bucket):
         corn = super().complete_bucket_worm(worm_id, name, **kwargs)
         return await corn
 
-    def extend_bucket_worm(self):
-        # TODO
-        raise NotImplemented
+    def extend_bucket_worm(self, worm_id: str, period_days: int,
+                           name: str = None, **kwargs):
+        corn = super().extend_bucket_worm(worm_id, period_days, name, **kwargs)
+        return await corn
 
     async def get_bucket_worm(self, name: str = None, **kwargs) -> Response:
         corn = super().get_bucket_worm(name, **kwargs)
